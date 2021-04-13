@@ -1,6 +1,6 @@
 import numpy as np
 
-from .module import Module
+from .modules import Module
 
 
 class Sigmoid(Module):
@@ -30,19 +30,16 @@ class ReLU(Module):
         return np.where(self.x > 0, delta, 0)
 
 
-class LeakyReLU(Module):
+class Softmax(Module):
+
     def forward(self, x):
-        self.x = x
-        ...
-
-    def backward(self, delta, eta, **kwargs):
-        ...
+        exps = np.exp(x)
+        return exps / np.sum(exps, axis=1, keepdims=True)
 
 
-class ELU(Module):
-    def forward(self, x):
-        self.x = x
-        ...
+class CrossEntropyLoss(object):
+    def __init__(self, n_classes):
+        self.n_classes = n_classes
 
-    def backward(self, delta, eta, **kwargs):
-        ...
+    def __call__(self, probs, targets):
+        return -np.sum(np.eye(self.n_classes)[targets] * np.log(probs))  # + (1 - np.eye(self.n_classes)[targets]) * np.log(1 - probs))
