@@ -1,9 +1,9 @@
-from functools import wraps
 import numpy as np
-from modules import *
-import torch.nn as nn
 import torch
 import torch.nn.functional as F
+
+from nn import *
+
 
 class testFather():
     def __init__(self, **kwargs):
@@ -86,7 +86,7 @@ class testModule(testFather):
         self.w = np.random.normal(loc=0.0, scale=0.1, size=(out_length, in_length + 1))
         self.w_tensor = torch.Tensor(self.w)
         # 初始化torch层
-        self.model_tensor = nn.Linear(in_features=in_length, out_features=out_length, bias=True)
+        self.model_tensor = torch.nn.Linear(in_features=in_length, out_features=out_length, bias=True)
         self.model_tensor.bias.data = self.w_tensor[:, 0]
         self.model_tensor.weight.data = self.w_tensor[:, 1:]
         # 初始化numpy层
@@ -95,7 +95,7 @@ class testModule(testFather):
     def BNInit(self):
         self.output_numpy_delta = np.random.rand(self.input_numpy.shape[0], self.input_numpy.shape[1])
         self.output_tensor_delta = torch.tensor(self.output_numpy_delta, requires_grad=True)
-        self.model_tensor = nn.BatchNorm1d(num_features=self.input_numpy.shape[1], eps=1e-5, momentum=0.9, affine=True)
+        self.model_tensor = torch.nn.BatchNorm1d(num_features=self.input_numpy.shape[1], eps=1e-5, momentum=0.9, affine=True)
         self.model_numpy =  BatchNorm1d(length=self.input_numpy.shape[1])
 
 

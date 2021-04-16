@@ -5,7 +5,6 @@ class Tensor(np.ndarray):
     def __init__(self, *args, **kwargs):
         self.grad = None
 
-
 def from_array(arr):
     """Convert the input array-like to a tensor."""
     t = arr.view(Tensor)
