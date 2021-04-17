@@ -2,14 +2,14 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from nn import *
+import nn
 
 
-class testFather():
+class TestBase(object):
+
     def __init__(self, **kwargs):
         self.kwargs = kwargs
         self.types = ['maxPooling', 'Conv2D', 'BN', 'FC']
-
 
         assert self.kwargs.get('type', None) is not None, "未指定测试模块类型，请添加'type'关键字"
         self.module_type = self.kwargs.get('type')
@@ -65,20 +65,15 @@ class testFather():
         print(self.input_tensor.grad)
 
 
+class TestModule(TestBase):
 
-
-
-
-class testModule(testFather):
     def __init__(self, **kwargs):
-        super(testModule, self).__init__(**kwargs)
+        super(TestModule, self).__init__(**kwargs)
         # 偏置矩阵初始化
         if self.module_type == "FC":
             self.FCInit()
         elif self.module_type == "BN":
             self.BNInit()
-
-
 
     def FCInit(self):
         in_length = self.input_numpy.shape[1]
@@ -90,19 +85,17 @@ class testModule(testFather):
         self.model_tensor.bias.data = self.w_tensor[:, 0]
         self.model_tensor.weight.data = self.w_tensor[:, 1:]
         # 初始化numpy层
-        self.model_numpy = Linear(in_length=in_length, out_length=out_length, w=self.w)
+        self.model_numpy = nn.Linear(in_length=in_length, out_length=out_length, w=self.w)
 
     def BNInit(self):
         self.output_numpy_delta = np.random.rand(self.input_numpy.shape[0], self.input_numpy.shape[1])
         self.output_tensor_delta = torch.tensor(self.output_numpy_delta, requires_grad=True)
         self.model_tensor = torch.nn.BatchNorm1d(num_features=self.input_numpy.shape[1], eps=1e-5, momentum=0.9, affine=True)
-        self.model_numpy =  BatchNorm1d(length=self.input_numpy.shape[1])
-
-
+        self.model_numpy = nn.BatchNorm1d(length=self.input_numpy.shape[1])
 
     def __call__(self):
         self.forward()
 
 
-t = testModule(type='BN')
+t = TestModule(type='BN')
 t()

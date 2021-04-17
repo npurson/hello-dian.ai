@@ -29,7 +29,7 @@ def ones(shape):
     return t
 
 
-def random(shape, loc=0.0, scale=1.0):
+def random(shape, loc=0.0, scale=0.01):
     """Return a new tensor of given shape, from normal distribution."""
     return from_array(np.random.normal(loc=loc, scale=scale, size=shape))
 
