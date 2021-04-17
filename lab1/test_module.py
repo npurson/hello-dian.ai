@@ -97,5 +97,6 @@ class TestModule(TestBase):
         self.forward()
 
 
-t = TestModule(type='BN')
-t()
+if __name__ == '__main__':
+    t = TestModule(type='BN')
+    t()

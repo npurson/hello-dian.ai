@@ -172,7 +172,7 @@ class Conv2d(Module):
             x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
         self.x = x
 
-        for b, c, h, w in itertools.product(*(range(d) for d in out.shape)):
+        for b, c, h, w in itertools.product(*tuple([range(d) for d in out.shape])):
             out[b, c, h, w] = np.sum(self.kernel[c] * x[b, :, h * self.stride : h * self.stride + self.kernel_size,
                                                               w * self.stride : w * self.stride + self.kernel_size])
 
@@ -193,18 +193,15 @@ class Conv2d(Module):
         """
         dx = np.zeros_like(self.x)
         self.kernel.grad = np.zeros_like(self.kernel)
-        if self.bias:
-            self.bias.grad = np.zeros_like(self.bias)
 
-        for b, c, h, w in itertools.product(*(range(d) for d in delta.shape)):
+        for b, c, h, w in itertools.product(*tuple([range(d) for d in delta.shape])):
             dx[b, :, h * self.stride : h * self.stride + self.kernel_size,
                      w * self.stride : w * self.stride + self.kernel_size] += self.kernel[c] * delta[b, c, h, w]
 
             self.kernel.grad[c] += delta[b, c, h, w] * self.x[b, :, h * self.stride : h * self.stride + self.kernel_size,
                                                                     w * self.stride : w * self.stride + self.kernel_size]
-            if self.bias and h == w == 0:
-                self.bias.grad[c] += np.sum(delta[b, c])
-
+        if self.bias:
+            self.bias.grad = np.sum(delta, axis=(0, 2, 3))
         if self.padding:
             dx = dx[..., self.padding:-self.padding, self.padding:-self.padding]
         return dx
@@ -290,7 +287,7 @@ class MaxPool(Module):
         """
         B, C, H, W = x.shape
         Hp, Wp = map(lambda i : (i - self.kernel_size + 2 * self.padding) // self.stride + 1, (H, W))
-        out = np.ndarray((B, C, Hp, Wp))
+        out = np.zeros((B, C, Hp, Wp))
         if self.padding:
             x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
         self.x = x

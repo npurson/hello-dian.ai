@@ -15,7 +15,6 @@ lengths = (n_features, 512, n_classes)
 
 
 class Model(nn.Module):
-
     def __init__(self, lengths: list, actv: str='ReLU') -> None:
         Activation = getattr(nn.activation, actv)
         self.layers = []
@@ -44,6 +43,21 @@ def load_mnist(mode='train', n_samples=None):
     return (X[:n_samples].reshape(n_samples, -1), y[:n_samples]) if n_samples is not None else (X.reshape(length, -1), y)
 
 
+def vis_demo(model):
+    X, y = load_mnist('test', 20)
+    pred = model.predict(X)
+    fig = plt.subplots(nrows=4, ncols=5, sharex='all', sharey='all')[1].flatten()
+    for i in range(20):
+        img = X[i].reshape(28, 28)
+        fig[i].set_title(pred[i])
+        fig[i].imshow(img, cmap='Greys', interpolation='nearest')
+    fig[0].set_xticks([])
+    fig[0].set_yticks([])
+    plt.tight_layout()
+    plt.savefig("vis.png")
+    plt.show()
+
+
 def main():
     trainloader = nn.data.DataLoader(load_mnist('train'), batch=bs)
     testloader = nn.data.DataLoader(load_mnist('test'))
@@ -66,18 +80,7 @@ def main():
             preds = model.predict(X)
             print(f' test acc: {np.sum(preds == y) / len(y) * 100:.1f}')
 
-    X, y = load_mnist('test', 20)
-    pred = model.predict(X)
-    fig = plt.subplots(nrows=4, ncols=5, sharex='all', sharey='all')[1].flatten()
-    for i in range(20):
-        img = X[i].reshape(28, 28)
-        fig[i].set_title(pred[i])
-        fig[i].imshow(img, cmap='Greys', interpolation='nearest')
-    fig[0].set_xticks([])
-    fig[0].set_yticks([])
-    plt.tight_layout()
-    plt.savefig("vis.png")
-    plt.show()
+    vis_demo(model)
 
 
 if __name__ == '__main__':

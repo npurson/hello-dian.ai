@@ -17,7 +17,7 @@ class Optim(object):
                 self._update_weight(attr)
             if isinstance(attr, Module):
                 self._step_module(attr)
-    
+
     def _update_weight(self, tensor):
         tensor -= self.lr * tensor.grad
 
@@ -29,8 +29,9 @@ class SGD(Optim):
         self.momentum = momentum
 
     def _update_weight(self, tensor):
-        tensor.v = ...
-        tensor -= self.lr * tensor.v
+        tensor.v = self.momentum * tensor.v + self.lr * tensor.grad \
+                   if 'v' in vars(tensor) else self.lr * tensor.grad
+        tensor -= tensor.v
 
 
 class Adam(Optim):
@@ -40,5 +41,4 @@ class Adam(Optim):
         ...
 
     def _update_weight(self, tensor):
-        tensor.v = ...
-        tensor -= self.lr * tensor.v
+        ...
