@@ -1,28 +1,44 @@
+from .tensor import Tensor
+from .modules import Module
+
+
 class Optim(object):
 
-    def __init__(self):
-        self.delta = None
+    def __init__(self, module, lr):
+        self.module = module
+        self.lr = lr
 
-    def step(self, delta):
-        return self.delta if self.delta is not None else delta
+    def step(self):
+        self._step_module(self.module)
+
+    def _step_module(self, module):
+        for attr in vars(module).values():
+            if isinstance(attr, Tensor):
+                self._update_weight(attr)
+            if isinstance(attr, Module):
+                self._step_module(attr)
+    
+    def _update_weight(self, tensor):
+        tensor -= self.lr * tensor.grad
 
 
 class SGD(Optim):
 
-    def __init__(self, momentum=0):
-        super(SGD, self).__init__()
+    def __init__(self, module, lr, momentum: float=0):
+        super(SGD, self).__init__(module, lr)
         self.momentum = momentum
 
-    def step(self, delta):
-        self.delta = (self.delta * self.momentum + delta) if self.delta is not None else delta
-        return self.delta
+    def _update_weight(self, tensor):
+        tensor.v = ...
+        tensor -= self.lr * tensor.v
 
 
 class Adam(Optim):
 
-    def __init__(self, momentum=0):
-        super(Adam, self).__init__()
+    def __init__(self, module, lr):
+        super(Adam, self).__init__(module, lr)
         ...
 
-    def step(self, delta):
-        ...
+    def _update_weight(self, tensor):
+        tensor.v = ...
+        tensor -= self.lr * tensor.v

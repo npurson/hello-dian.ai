@@ -94,7 +94,7 @@ class BatchNorm1d(Module):
             length: L from expected input shape (N, L).
             momentum: default 0.9.
         """
-        super(Linear, self).__init__()
+        super(BatchNorm1d, self).__init__()
         self.mean = np.zeros((length,))
         self.var = np.zeros((length,))
         self.gamma = tensor.ones((length,))
@@ -167,12 +167,12 @@ class Conv2d(Module):
         """
         B, C, H, W = x.shape
         Hp, Wp = map(lambda i : (i - self.kernel_size + 2 * self.padding) // self.stride + 1, (H, W))
-        out = Tensor((B, self.channels, Hp, Wp))
+        out = np.ndarray((B, self.channels, Hp, Wp))
         if self.padding:
             x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
         self.x = x
 
-        for b, c, h, w in itertools.product(*out.shape):
+        for b, c, h, w in itertools.product(*(range(d) for d in out.shape)):
             out[b, c, h, w] = np.sum(self.kernel[c] * x[b, :, h * self.stride : h * self.stride + self.kernel_size,
                                                               w * self.stride : w * self.stride + self.kernel_size])
 
@@ -196,7 +196,7 @@ class Conv2d(Module):
         if self.bias:
             self.bias.grad = np.zeros_like(self.bias)
 
-        for b, c, h, w in itertools.product(*delta.shape):
+        for b, c, h, w in itertools.product(*(range(d) for d in delta.shape)):
             dx[b, :, h * self.stride : h * self.stride + self.kernel_size,
                      w * self.stride : w * self.stride + self.kernel_size] += self.kernel[c] * delta[b, c, h, w]
 
@@ -211,7 +211,7 @@ class Conv2d(Module):
 
 
 class AvgPool(Module):
-    
+
     def __init__(self, kernel_size: int=2,
                  stride: int=2, padding: int=0):
         """Module which applies average pooling to input.
@@ -235,12 +235,12 @@ class AvgPool(Module):
         """
         B, C, H, W = x.shape
         Hp, Wp = map(lambda i : (i - self.kernel_size + 2 * self.padding) // self.stride + 1, (H, W))
-        out = Tensor((B, C, Hp, Wp))
+        out = np.ndarray((B, C, Hp, Wp))
         if self.padding:
             x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
         self.x = x
 
-        for h, w in itertools.product(Hp, Wp):
+        for h, w in itertools.product(range(Hp), range(Wp)):
             out[..., h, w] = np.mean(x[..., h * self.stride : h * self.stride + self.kernel_size,
                                             w * self.stride : w * self.stride + self.kernel_size], axis=(2, 3))
         return out
@@ -249,13 +249,13 @@ class AvgPool(Module):
         """Backward propagation of average pooling module.
 
         Args:
-            delta: input of shape (B, C, H_out, W_out).
+            delta: output delta of shape (B, C, H_out, W_out).
         Returns:
-            dx: output of shape (B, C, H_in, W_in).
+            dx: input delta of shape (B, C, H_in, W_in).
         """
         dx = np.zeros_like(self.x)
         B, C, H, W = delta.shape
-        for h, w in itertools.product(H, W):
+        for h, w in itertools.product(range(H), range(W)):
             dx[..., h * self.stride : h * self.stride + self.kernel_size,
                     w * self.stride : w * self.stride + self.kernel_size] \
                 += (np.expand_dims(delta[..., h, w], 2).repeat(self.kernel_size ** 2, 2) / \
@@ -266,47 +266,70 @@ class AvgPool(Module):
 
 
 class MaxPool(Module):
+
     def __init__(self, kernel_size: int=2,
                  stride: int=2, padding: int=0):
+        """Module which applies max pooling to input.
 
+        Args:
+            kernel_size: default 2.
+            stride: default 2.
+            padding: default 0.
+        """
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
 
     def forward(self, x):
+        """Forward propagation of max pooling module.
 
-        H_new = int( (H - self.kernel_size + 2 * self.padding) / self.stride + 1)
-        W_new = int( (W - self.kernel_size + 2 * self.padding) / self.stride + 1)
-
-
+        Args:
+            x: input of shape (B, C, H_in, W_in).
+        Returns:
+            out: output of shape (B, C, H_out, W_out).
+        """
+        B, C, H, W = x.shape
+        Hp, Wp = map(lambda i : (i - self.kernel_size + 2 * self.padding) // self.stride + 1, (H, W))
+        out = np.ndarray((B, C, Hp, Wp))
         if self.padding:
-            x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding),
-                           (self.padding, self.padding)), mode="constant")
+            x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding), (self.padding, self.padding)))
         self.x = x
-        shape = (B, C, H_new, W_new, self.kernel_size, self.kernel_size)
-        strides = (*x.strides[:-2], x.strides[-2] * self.stride, x.strides[-1] * self.stride, *x.strides[-2:])
-        x_new = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides, writeable=False)
 
-        return np.max(x_new,axis=(-2,-1))
+        for h, w in itertools.product(range(Hp), range(Wp)):
+            out[..., h, w] = np.max(x[..., h * self.stride : h * self.stride + self.kernel_size,
+                                           w * self.stride : w * self.stride + self.kernel_size], axis=(2, 3))
+        return out
 
-    def backward(self, delta: np.ndarray):
-        delta_ = np.zeros_like(self.x)
+        # # Method 2
+        # shape = (B, C, Hp, Wp, self.kernel_size, self.kernel_size)
+        # strides = (*x.strides[:-2], x.strides[-2] * self.stride, x.strides[-1] * self.stride, *x.strides[-2:])
+        # out = np.lib.stride_tricks.as_strided(x, shape=shape, strides=strides, writeable=False)
+        # return np.max(out, axis=(-2,-1))
+
+    def backward(self, delta):
+        """Backward propagation of max pooling module.
+
+        Args:
+            delta: output delta of shape (B, C, H_out, W_out).
+        Returns:
+            out: input delta of shape (B, C, H_in, W_in).
+        """
+        dx = np.zeros_like(self.x)
         B, C, H, W = delta.shape
 
-        for h in range(H):
-            for w in range(W):
-                # (B,C)
-                max = np.max(self.x[:, :, h * self.stride:h * self.stride + self.kernel_size,
-                             w * self.stride:w * self.stride + self.kernel_size], axis=(1, 2))
-                # (B,C,kernel_size,kernel_size)
-                mask = self.x[:, :, h * self.stride:h * self.stride + self.kernel_size,
-                       w * self.stride:w * self.stride + self.kernel_size] == max
-                # (B,C,kernel_size,kernel_size)
-                delta_[:, :, h * self.stride:h * self.stride + self.kernel_size, w * self.stride:w * self.stride + self.kernel_size] += mask * np.expand_dims(delta[:, :, h, w],2).repeat(self.kernel_size ** 2, axis=2).reshape(B, C, self.kernel_size, self.kernel_size)
+        for h, w in itertools.product(range(H), range(W)):
+            max = np.max(self.x[..., h * self.stride : h * self.stride + self.kernel_size,
+                                     w * self.stride : w * self.stride + self.kernel_size], axis=(2, 3))
+            mask = self.x[..., h * self.stride:h * self.stride + self.kernel_size,
+                               w * self.stride:w * self.stride + self.kernel_size] == max
+            dx[:, :, h * self.stride : h * self.stride + self.kernel_size,
+                     w * self.stride : w * self.stride + self.kernel_size] \
+                += mask * np.expand_dims(delta[..., h, w], 2).repeat(self.kernel_size ** 2, axis=2) \
+                                                             .reshape(B, C, self.kernel_size, self.kernel_size)
 
         if self.padding:
-            delta_ = delta_[:, :, self.padding:-self.padding, self.padding:-self.padding]
-        return delta_
+            dx = dx[..., self.padding:-self.padding, self.padding:-self.padding]
+        return dx
 
 
 class Dropout(Module):

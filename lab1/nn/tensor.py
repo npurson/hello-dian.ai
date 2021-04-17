@@ -2,6 +2,7 @@ import numpy as np
 
 
 class Tensor(np.ndarray):
+
     def __init__(self, *args, **kwargs):
         self.grad = None
 
