@@ -154,7 +154,7 @@ class Conv2d(Module):
         self.stride = stride
         self.padding = padding
 
-        self.kernel = Tensor((out_channels, in_channels, kernel_size, kernel_size))
+        self.kernel = tensor.rand((out_channels, in_channels, kernel_size, kernel_size))
         self.bias = tensor.zeros(out_channels) if bias else None
 
     def forward(self, x):

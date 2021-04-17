@@ -2,9 +2,11 @@ import numpy as np
 
 
 class Tensor(np.ndarray):
-
+    """
+    """
     def __init__(self, *args, **kwargs):
         self.grad = None
+
 
 def from_array(arr):
     """Convert the input array-like to a tensor."""
@@ -25,6 +27,11 @@ def ones(shape):
     t = Tensor(shape)
     t.fill(1)
     return t
+
+
+def random(shape, loc=0.0, scale=1.0):
+    """Return a new tensor of given shape, from normal distribution."""
+    return from_array(np.random.normal(loc=loc, scale=scale, size=shape))
 
 
 if __name__ == '__main__':

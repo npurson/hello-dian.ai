@@ -5,16 +5,33 @@ from tqdm import tqdm
 import nn
 import nn.functional as F
 
-from model import DNN
-
 
 n_features = 28 * 28
 n_classes = 10
 n_epochs = 10
 bs = 1000
-eta = 1e-3
-reg_lambda = 0
-lengths = (n_features, 512, 512, n_classes)
+lr = 1e-3
+lengths = (n_features, 512, n_classes)
+
+
+class Model(nn.Module):
+
+    def __init__(self, lengths: list, actv: str='ReLU') -> None:
+        Activation = getattr(nn.activation, actv)
+        self.layers = []
+        for i in range(len(lengths) - 1):
+            self.layers.append(nn.Linear(lengths[i], lengths[i + 1]))
+            self.layers.append(nn.BatchNorm1d(lengths[i + 1]))
+            self.layers.append(Activation() if i != len(lengths) - 2 else F.Softmax())
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+    def backward(self, delta):
+        for layer in reversed(self.layers):
+            delta = layer.backward(delta)
 
 
 def load_mnist(mode='train', n_samples=None):
@@ -30,23 +47,24 @@ def load_mnist(mode='train', n_samples=None):
 def main():
     trainloader = nn.data.DataLoader(load_mnist('train'), batch=bs)
     testloader = nn.data.DataLoader(load_mnist('test'))
-    model = DNN(lengths)
-    optimizer = nn.optim.SGD(momentum=0.9)
+    model = Model(lengths)
+    optimizer = nn.optim.SGD(model, lr=lr, momentum=0.9)
     criterion = F.CrossEntropyLoss(n_classes=n_classes)
 
     for i in range(n_epochs):
         bar = tqdm(trainloader, total=6e4 / bs)
-        bar.set_description(f'epoch {i:2}')
+        bar.set_description(f'epoch  {i:2}')
         for X, y in bar:
             probs = model.forward(X)
-            delta = optimizer.step(probs - np.eye(n_classes)[y])
-            model.backward(delta, eta, reg_lambda)
+            loss = criterion(probs, y)
+            model.backward(loss.backward())
+            optimizer.step()
             preds = np.argmax(probs, axis=1)
-            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f}')  # loss={criterion(probs, y):.3f}')
+            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f} loss={criterion(probs, y):.3f}')
 
         for X, y in testloader:
             preds = model.predict(X)
-            print(f'test acc: {np.sum(preds == y) / len(y) * 100:.1f}')
+            print(f' test acc: {np.sum(preds == y) / len(y) * 100:.1f}')
 
     X, y = load_mnist('test', 20)
     pred = model.predict(X)

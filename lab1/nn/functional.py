@@ -71,6 +71,7 @@ class SoftmaxLoss(Loss):
     def __call__(self, probs, targets):
         super(SoftmaxLoss, self).__call__(probs, targets)
         ...
+        return self
 
     def backward(self, delta):
         return self.probs - self.targets
@@ -81,6 +82,7 @@ class CrossEntropyLoss(Loss):
     def __call__(self, probs, targets):
         super(SoftmaxLoss, self).__call__(probs, targets)
         ...
+        return self
 
     def backward(self):
         ...
