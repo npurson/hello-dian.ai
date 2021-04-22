@@ -1,7 +1,7 @@
 import os
 from torch.utils import data
 
-from utils import transforms
+import transforms
 
 
 class TvidDataset(data.Dataset):

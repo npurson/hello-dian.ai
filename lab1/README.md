@@ -51,7 +51,7 @@ dx = module.backward(delta)
 
 Tips：VSCode 用户可以通过代码中加入单行 `# %%` 将代码变成 Jupyter Notebook
 
-## lab 1
+## Handbook
 
 实现以下模块：
 - [ ] BatchNorm1d, Conv2d, AvgPool, MaxPool, DropOut
