@@ -16,7 +16,7 @@ lengths = (n_features, 512, n_classes)
 
 class Model(nn.Module):
     def __init__(self, lengths: list, actv: str='ReLU') -> None:
-        Activation = getattr(nn.activation, actv)
+        Activation = getattr(F, actv)
         self.layers = []
         for i in range(len(lengths) - 1):
             self.layers.append(nn.Linear(lengths[i], lengths[i + 1]))
@@ -45,11 +45,12 @@ def load_mnist(mode='train', n_samples=None):
 
 def vis_demo(model):
     X, y = load_mnist('test', 20)
-    pred = model.predict(X)
+    probs = model.forward(X)
+    preds = np.argmax(probs, axis=1)
     fig = plt.subplots(nrows=4, ncols=5, sharex='all', sharey='all')[1].flatten()
     for i in range(20):
         img = X[i].reshape(28, 28)
-        fig[i].set_title(pred[i])
+        fig[i].set_title(preds[i])
         fig[i].imshow(img, cmap='Greys', interpolation='nearest')
     fig[0].set_xticks([])
     fig[0].set_yticks([])
@@ -74,10 +75,11 @@ def main():
             model.backward(loss.backward())
             optimizer.step()
             preds = np.argmax(probs, axis=1)
-            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f} loss={criterion(probs, y):.3f}')
+            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f} loss={loss.value:.3f}')
 
         for X, y in testloader:
-            preds = model.predict(X)
+            probs = model.forward(X)
+            preds = np.argmax(probs, axis=1)
             print(f' test acc: {np.sum(preds == y) / len(y) * 100:.1f}')
 
     vis_demo(model)

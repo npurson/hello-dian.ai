@@ -14,9 +14,13 @@ class Optim(object):
     def _step_module(self, module):
         for attr in vars(module).values():
             if isinstance(attr, Tensor):
-                self._update_weight(attr)
+                if hasattr(attr, 'grad'):
+                    self._update_weight(attr)
             if isinstance(attr, Module):
                 self._step_module(attr)
+            if isinstance(attr, list):
+                for item in attr:
+                    self._step_module(item)
 
     def _update_weight(self, tensor):
         tensor -= self.lr * tensor.grad

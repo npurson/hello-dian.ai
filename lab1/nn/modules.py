@@ -2,7 +2,6 @@ import numpy as np
 import itertools
 
 from . import tensor
-from .tensor import Tensor
 
 
 class Module(object):
@@ -60,7 +59,7 @@ class Linear(Module):
             in_length: L_in from expected input shape (N, L_in).
             out_length: L_out from output shape (N, L_out).
         """
-        self.w = Tensor((in_length + 1, out_length))
+        self.w = tensor.random((in_length + 1, out_length))
 
     def forward(self, x):
         """Forward propagation of linear module.
@@ -72,6 +71,7 @@ class Linear(Module):
         """
         self.x = x
         return np.dot(x, self.w[1:]) + self.w[0]
+
 
     def backward(self, delta):
         """Backward propagation of linear module.
@@ -95,8 +95,8 @@ class BatchNorm1d(Module):
             momentum: default 0.9.
         """
         super(BatchNorm1d, self).__init__()
-        self.mean = np.zeros((length,))
-        self.var = np.zeros((length,))
+        self.running_mean = np.zeros((length,))
+        self.running_var = np.zeros((length,))
         self.gamma = tensor.ones((length,))
         self.beta = tensor.zeros((length,))
         self.momentum = momentum
@@ -113,8 +113,8 @@ class BatchNorm1d(Module):
         if self.training:
             self.mean = np.mean(x, axis = 0)
             self.var = np.var(x, axis = 0)
-            self.running_mean = self.momentum * self.mean + (1 - self.momentum) * self.mean
-            self.running_var = self.momentum * self.var + (1 - self.momentum) * self.var
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * self.mean
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * self.var
             self.x = (x - self.mean) / np.sqrt(self.var + self.eps)
         else:
             self.x = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)

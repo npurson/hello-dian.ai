@@ -56,12 +56,12 @@ class Loss(object):
     """
     def __init__(self, n_classes):
         self.n_classes = n_classes
-    
+
     def __call__(self, probs, targets):
         self.probs = probs
         self.targets = targets
         ...
-    
+
     def backward(self):
         ...
 
@@ -71,10 +71,13 @@ class SoftmaxLoss(Loss):
     def __call__(self, probs, targets):
         super(SoftmaxLoss, self).__call__(probs, targets)
         ...
+        exps = np.exp(probs)
+        probs = exps / np.sum(exps, axis=1, keepdims=True)
+        self.value = np.sum(-np.eye(self.n_classes)[targets] * np.log(probs))
         return self
 
-    def backward(self, delta):
-        return self.probs - self.targets
+    def backward(self):
+        return self.probs - np.eye(self.n_classes)[self.targets]
 
 
 class CrossEntropyLoss(Loss):
