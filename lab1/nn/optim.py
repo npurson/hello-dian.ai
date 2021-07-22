@@ -12,6 +12,12 @@ class Optim(object):
         self._step_module(self.module)
 
     def _step_module(self, module):
+
+        # TODO Traverse the attributes of `self.module`,
+        # if is `Tensor`, call `self._update_weight()`,
+        # else if is `Module` or `List` of `Module`,
+        # call `self._step_module()` recursively.
+
         for attr in vars(module).values():
             if isinstance(attr, Tensor):
                 if hasattr(attr, 'grad'):
@@ -21,6 +27,8 @@ class Optim(object):
             if isinstance(attr, list):
                 for item in attr:
                     self._step_module(item)
+
+        # End of todo
 
     def _update_weight(self, tensor):
         tensor -= self.lr * tensor.grad
@@ -33,16 +41,34 @@ class SGD(Optim):
         self.momentum = momentum
 
     def _update_weight(self, tensor):
+
+        # TODO Update the weight of tensor
+        # in SGD manner.
+
         tensor.v = self.momentum * tensor.v + self.lr * tensor.grad \
                    if 'v' in vars(tensor) else self.lr * tensor.grad
         tensor -= tensor.v
+
+        # End of todo
 
 
 class Adam(Optim):
 
     def __init__(self, module, lr):
         super(Adam, self).__init__(module, lr)
+
+        # TODO Initialize the attributes
+        # of Adam optimizer.
+
         ...
 
+        # End of todo
+
     def _update_weight(self, tensor):
+
+        # TODO Update the weight of
+        # tensor in Adam manner.
+
         ...
+
+        # End of todo

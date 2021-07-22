@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from torch.utils import data
 from tqdm import tqdm
@@ -23,15 +22,20 @@ def train_epoch(model, dataloader, criterion: dict, optimizer, scheduler, epoch,
     bar.set_description(f'epoch {epoch:2}')
     correct, total = 0, 0
     for X, y in bar:
+
+        # TODO Implement the train pipeline.
+
         X, gt_cls, gt_bbox = X.to(device), y['cls'].to(device), y['bbox'].to(device)
         logits, bbox = model(X)
         loss = criterion['cls'](logits, gt_cls) + 10 * criterion['box'](bbox, gt_bbox)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
         correct += sum((torch.argmax(logits, axis=1) == gt_cls).cpu().detach().numpy() & (compute_iou(bbox.cpu(), gt_bbox.cpu()) > iou_thr))
         total += len(X)
+
+        # End of todo
+
         bar.set_postfix_str(f'lr={scheduler.get_last_lr()[0]:.4f} acc={correct / total * 100:.2f} loss={loss.item():.2f}')
     scheduler.step()
 
@@ -41,11 +45,17 @@ def test_epoch(model, dataloader, device, epoch):
     with torch.no_grad():
         correct, correct_cls, total = 0, 0, 0
         for X, y in dataloader:
+
+            # TODO Implement the test pipeline.
+
             X, gt_cls, gt_bbox = X.to(device), y['cls'].to(device), y['bbox'].to(device)
             logits, bbox = model(X)
             correct += sum((torch.argmax(logits, axis=1) == gt_cls).cpu().detach().numpy() & (compute_iou(bbox.cpu(), gt_bbox.cpu()) > iou_thr))
             correct_cls += sum((torch.argmax(logits, axis=1) == gt_cls))
             total += len(X)
+
+            # End of todo
+
         print(f' val acc: {correct / total * 100:.2f}')
 
 
@@ -60,6 +70,7 @@ def main():
     for epoch in range(epochs):
         train_epoch(model, trainloader, criterion, optimizer, scheduler, epoch, device)
         test_epoch(model, testloader, device, epoch)
+
 
 if __name__ == '__main__':
     main()

@@ -1,9 +1,9 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 import resnet
 
+
+# TODO Design the detector.
+# tips: Use pretrained `resnet` as backbone.
 
 class BoxHead(nn.Module):
     def __init__(self, lengths, num_classes):
@@ -32,8 +32,11 @@ class Detector(nn.Module):
         self.backbone = getattr(resnet, backbone)(pretrained=True)
         self.box_head = BoxHead(lengths, num_classes)
 
+
     def forward(self, x):
         x = self.backbone(x)        # B, 2048, 4, 4
         x = x.flatten(1)
         logits, bbox = self.box_head(x)
         return logits, bbox
+
+# End of todo

@@ -1,12 +1,15 @@
 import os
 from torch.utils import data
-
 import transforms
 
 
 class TvidDataset(data.Dataset):
 
-    CLASSES = [ 'bird', 'car', 'dog', 'lizard', 'turtle' ]
+    # TODO Implement the dataset class inherited
+    # from `torch.utils.data.Dataset`.
+    # tips: Use `transforms`.
+
+    CLASSES = ['bird', 'car', 'dog', 'lizard', 'turtle']
 
     def __init__(self, root, mode):
 
@@ -57,6 +60,8 @@ class TvidDataset(data.Dataset):
         img_info = self.images[idx]
         img, bbox = self.transforms(img_info['path'], img_info['bbox'])
         return img, { 'cls': img_info['cls'], 'bbox': bbox }
+
+    # End of todo
 
 
 if __name__ == '__main__':

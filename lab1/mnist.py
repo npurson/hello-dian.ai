@@ -15,6 +15,9 @@ lengths = (n_features, 512, n_classes)
 
 
 class Model(nn.Module):
+
+    # TODO Design the classifier.
+
     def __init__(self, lengths: list, actv: str='ReLU') -> None:
         Activation = getattr(F, actv)
         self.layers = []
@@ -31,6 +34,8 @@ class Model(nn.Module):
     def backward(self, delta):
         for layer in reversed(self.layers):
             delta = layer.backward(delta)
+
+    # End of todo
 
 
 def load_mnist(mode='train', n_samples=None):
