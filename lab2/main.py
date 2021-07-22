@@ -25,14 +25,7 @@ def train_epoch(model, dataloader, criterion: dict, optimizer, scheduler, epoch,
 
         # TODO Implement the train pipeline.
 
-        X, gt_cls, gt_bbox = X.to(device), y['cls'].to(device), y['bbox'].to(device)
-        logits, bbox = model(X)
-        loss = criterion['cls'](logits, gt_cls) + 10 * criterion['box'](bbox, gt_bbox)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        correct += sum((torch.argmax(logits, axis=1) == gt_cls).cpu().detach().numpy() & (compute_iou(bbox.cpu(), gt_bbox.cpu()) > iou_thr))
-        total += len(X)
+        ...
 
         # End of todo
 
@@ -48,11 +41,7 @@ def test_epoch(model, dataloader, device, epoch):
 
             # TODO Implement the test pipeline.
 
-            X, gt_cls, gt_bbox = X.to(device), y['cls'].to(device), y['bbox'].to(device)
-            logits, bbox = model(X)
-            correct += sum((torch.argmax(logits, axis=1) == gt_cls).cpu().detach().numpy() & (compute_iou(bbox.cpu(), gt_bbox.cpu()) > iou_thr))
-            correct_cls += sum((torch.argmax(logits, axis=1) == gt_cls))
-            total += len(X)
+            ...
 
             # End of todo
 
