@@ -17,7 +17,7 @@ lengths = (n_features, 512, n_classes)
 class Model(nn.Module):
 
     # TODO Design the classifier.
-
+    
     ...
 
     # End of todo

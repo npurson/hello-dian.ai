@@ -10,6 +10,7 @@ class Module(object):
         """If a module behaves different between training and testing,
         its init method should inherit from this one."""
         self.training = True
+        self.forw = None
 
     def __call__(self, x: np.ndarray) -> np.ndarray:
         """Defines calling forward method at every call.
@@ -49,6 +50,56 @@ class Module(object):
                 Module.eval()
 
 
+# class Linear(Module):
+
+#     def __init__(self, in_length: int, out_length: int):
+#         """Module which applies linear transformation to input.
+
+#         Args:
+#             in_length: L_in from expected input shape (N, L_in).
+#             out_length: L_out from output shape (N, L_out).
+#         """
+
+#         # TODO Initialize the weight
+#         # of linear module.
+        
+#         ...
+
+#         # End of todo
+
+#     def forward(self, x):
+#         """Forward propagation of linear module.
+
+#         Args:
+#             x: input of shape (N, L_in).
+#         Returns:
+#             out: output of shape (N, L_out).
+#         """
+
+#         # TODO Implement forward propogation
+#         # of linear module.
+
+#         ...
+
+#         # End of todo
+
+
+#     def backward(self, dy):
+#         """Backward propagation of linear module.
+
+#         Args:
+#             dy: output delta of shape (N, L_out).
+#         Returns:
+#             dx: input delta of shape (N, L_in).
+#         """
+
+#         # TODO Implement backward propogation
+#         # of linear module.
+
+#         ...
+
+#         # End of todo
+
 class Linear(Module):
 
     def __init__(self, in_length: int, out_length: int):
@@ -61,7 +112,9 @@ class Linear(Module):
 
         # TODO Initialize the weight
         # of linear module.
-
+        print('hello world')
+        self.x = None
+        self.w = tensor.random((in_length, out_length))   # 初始化权重，注意权重还有一个参数为grad
         ...
 
         # End of todo
@@ -77,7 +130,8 @@ class Linear(Module):
 
         # TODO Implement forward propogation
         # of linear module.
-
+        self.x = x
+        return np.dot(x, self.w)
         ...
 
         # End of todo
@@ -94,11 +148,66 @@ class Linear(Module):
 
         # TODO Implement backward propogation
         # of linear module.
-
+        self.w.grad = np.dot(self.x.T, dy)
+        return self.w.grad
         ...
 
         # End of todo
 
+
+
+
+
+
+# class BatchNorm1d(Module):
+
+#     def __init__(self, length: int, momentum: float=0.9):
+#         """Module which applies batch normalization to input.
+
+#         Args:
+#             length: L from expected input shape (N, L).
+#             momentum: default 0.9.
+#         """
+#         super(BatchNorm1d, self).__init__()
+
+#         # TODO Initialize the attributes
+#         # of 1d batchnorm module.
+
+#         ...
+
+#         # End of todo
+
+#     def forward(self, x):
+#         """Forward propagation of batch norm module.
+
+#         Args:
+#             x: input of shape (N, L).
+#         Returns:
+#             out: output of shape (N, L).
+#         """
+
+#         # TODO Implement forward propogation
+#         # of 1d batchnorm module.
+
+#         ...
+
+#         # End of todo
+
+#     def backward(self, dy):
+#         """Backward propagation of batch norm module.
+
+#         Args:
+#             dy: output delta of shape (N, L).
+#         Returns:
+#             dx: input delta of shape (N, L).
+#         """
+
+#         # TODO Implement backward propogation
+#         # of 1d batchnorm module.
+
+#         ...
+
+#         # End of todo
 
 class BatchNorm1d(Module):
 
@@ -110,10 +219,21 @@ class BatchNorm1d(Module):
             momentum: default 0.9.
         """
         super(BatchNorm1d, self).__init__()
-
+        
         # TODO Initialize the attributes
         # of 1d batchnorm module.
-
+        L = length
+        self.gamma = tensor.ones(L) # initialize the parameters
+        self.beta = tensor.zeros(L)  # same as up
+        self.momentum = momentum
+        self.eps = 1e-5
+        self.bn_param = {}
+        self.bn_param['running_mean'] = tensor.zeros(L)
+        self.bn_param['running_var'] = tensor.ones(L)
+        self.x_hat = None
+        self.var = None
+        self.avg = None
+        self.vareps = None
         ...
 
         # End of todo
@@ -129,7 +249,27 @@ class BatchNorm1d(Module):
 
         # TODO Implement forward propogation
         # of 1d batchnorm module.
-
+        # https://blog.csdn.net/weixin_39228381/article/details/107896863
+        # https://zhuanlan.zhihu.com/p/196277511
+        
+        running_mean = self.bn_param['running_mean']
+        running_var = self.bn_param['running_var']
+        
+        N, L = x.shape  # get the batch and the length of a sample
+        self.avg = np.sum(x, axis=0) / N # get the every sample's average
+        self.var = np.sum((x - np.tile(self.avg, (N, 1))) ** 2, axis=0) / N  # get the every sample's variance
+        self.xmu = x - self.avg
+        self.vareps = (self.var + self.eps) ** 0.5   # get the Denominators
+        self.x_hat = (x - np.tile(self.avg, (N, 1))) / np.tile(self.vareps, (N, 1))  # get the normalized sequence 
+        
+        out = self.gamma * self.x_hat + self.beta
+        
+        running_mean = self.momentum * running_mean + (1 - self.momentum) * self.avg
+        running_var = self.momentum * running_var + (1 - self.momentum) * self.var
+        self.bn_param['running_mean'] = running_mean
+        self.bn_param['running_var'] = running_var
+        
+        return out
         ...
 
         # End of todo
@@ -145,10 +285,65 @@ class BatchNorm1d(Module):
 
         # TODO Implement backward propogation
         # of 1d batchnorm module.
+#         N, L = dy.shape
+#         var_plus_eps = self.vareps
+#         self.gamma.grad = np.sum(self.x_hat * dy, axis=0)
+#         self.beta.grad = np.sum(dy, axis=0)
+        
+#         dx_hat = dy * self.gamma   # x_hat's grad
+#         x_hat = self.x_hat
+# #         dx = N * dx_hat - np.sum(dx_hat, axis=0) + (1.0/N) * np.sum(dx_hat, axis=0) * np.sum(dx_hat * x_hat, axis=0) - x_hat * np.sum(dx_hat * x_hat, axis=0) 
+# #         dx *= (1 - 1.0/N) / var_plus_eps
+#         dx = dx_hat * (1 - 1. / N) * (1. / var_plus_eps) * (1 - 1. / (N * self.var) * self.xmu ** 2)
 
+#         return dx
+        xhat,gamma,xmu,ivar,sqrtvar,var,eps = self.x_hat, self.gamma, self.xmu, self.vareps, 1 / self.vareps, self.var, self.eps
+
+        #get the dimensions of the input/output
+        dout = dy
+        N,D = dout.shape
+
+        #step9
+        dbeta = np.sum(dout, axis=0)
+        dgammax = dout #not necessary, but more understandable
+
+        #step8
+        dgamma = np.sum(dgammax*xhat, axis=0)
+        dxhat = dgammax * gamma
+
+        #step7
+        divar = np.sum(dxhat*xmu, axis=0)
+        dxmu1 = dxhat * ivar
+
+        #step6
+        dsqrtvar = -1. /(sqrtvar**2) * divar
+
+        #step5
+        dvar = 0.5 * 1. /np.sqrt(var+eps) * dsqrtvar
+
+        #step4
+        dsq = 1. /N * np.ones((N,D)) * dvar
+
+        #step3
+        dxmu2 = 2 * xmu * dsq
+
+        #step2
+        dx1 = (dxmu1 + dxmu2)
+        dmu = -1 * np.sum(dxmu1+dxmu2, axis=0)
+
+
+        #step1
+        dx2 = 1. /N * np.ones((N,D)) * dmu
+        
+        #step0
+        dx = dx1 + dx2
+
+        return dx
         ...
 
         # End of todo
+
+
 
 
 class Conv2d(Module):
