@@ -7,6 +7,20 @@
 
 Lab assignments for Introduction Course of _dian.ai_ (Dian AI Group).
 
+
+学习有关记录：
+
+### lab 01
+
+1. 完成了hello-world 
+2. 学习BN并实现，但是没有通过有关一些疑问没有解决，有关momentum的有关信息
+3. 终于学完卷积了😭😭，完成了有关卷积conv1与池化的代码
+4. 关于整个卷积神经网络的代码完成了关于model部分，而优化器部分没有完成，接下来写一下SGD部分预计lab01可以完成。
+5. 
+
+
+
+
 ## Introduction
 
 - **[Lab 1: Naive Neural Network](lab1/README.md)**: Implement a naive neural network framework, and train a classifier on MNIST dataset.
