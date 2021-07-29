@@ -7,8 +7,13 @@
 
 Lab assignments for Introduction Course of _dian.ai_ (Dian AI Group).
 
+## <font color="#660000">HELP!!</font> 
 
-学习有关记录：
+希望负责人可以帮忙看一下我的有关BatchNorm 的代码，本人参考Kratzert的有关博客[Blog](https://kratzert.github.io/2016/02/12/understanding-the-gradient-flow-through-the-batch-normalization-layer.html)，起初想要自己写然后争取一个较短的代码，但是最后经过model_test没有成功（反向传播梯度不对），后来照着Blog代码一步一步反向传播，还是不对😅。我怀疑是因为momentum的缘故，我到现在也不是特别明白这个东西存在意义，我参考有关博客了解了全局方差等概念，还有评估什么的……，但是还是很模糊，由于时间原因，所以我选择暂时先不深究，如果负责人有时间的话，麻烦帮忙看一下本人关于BatchNorm的代码🥳。
+
+
+
+## 学习有关记录：
 
 ### lab 01
 
