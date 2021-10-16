@@ -24,6 +24,6 @@ def walk_files(dirs: list):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--dirs', default=['lab1', 'lab2'], nargs='+')
+    parser.add_argument('-d', '--dirs', default=['lab0', 'lab1', 'lab2'], nargs='+')
     args = parser.parse_args()
     walk_files(args.dirs)

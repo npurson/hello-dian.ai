@@ -9,7 +9,7 @@ class DataLoader(object):
             yield self.X, self.y
         else:
             n = 0
-            while n + self.b  <= self.X.shape[0]:
+            while n + self.b <= self.X.shape[0]:
                 yield self.X[n:n + self.b], self.y[n:n + self.b]
                 n += self.b
 

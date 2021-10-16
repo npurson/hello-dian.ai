@@ -3,6 +3,7 @@
 Implement a naive neural network framework, and train a classifier on MNIST dataset.
 
 - **[Handbook for Lab1](docs/handbook.md)**
+- **[Detailed Handbook](docs/intro.md)**
 - **[Doc for NN](docs/doc.md)**
 
 ## Reference

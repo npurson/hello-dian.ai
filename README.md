@@ -1,14 +1,15 @@
-# Hello, dian.ai!
+# Hello, Dian.ai!
 
 ![](https://img.shields.io/badge/organization-dian.ai-orange)
 ![](https://img.shields.io/badge/version-1.2.0-blue)
 ![](https://img.shields.io/badge/license-MIT-blue)
 ![](https://img.shields.io/badge/test-100%-green)
 
-Lab assignments for Introduction Course of _dian.ai_ (Dian AI Group).
+Lab assignments for Introduction Course of _Dian.ai_.
 
 ## Introduction
 
+- **[Lab 0: K Nearest Neighbors](lab0/README.md)**
 - **[Lab 1: Naive Neural Network](lab1/README.md)**: Implement a naive neural network framework, and train a classifier on MNIST dataset.
 - **[Lab 2: Single Object Detection](lab2/README.md)**: Implement a single object detector with PyTorch.
 - **[Lab 3: Object Detection Libraries](lab3/README.md)**: Reproduce SOTA models or tricks based on off-the-shelf detection libraries.

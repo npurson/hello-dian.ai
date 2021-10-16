@@ -50,8 +50,7 @@ class TvidDataset(data.Dataset):
                     self.images.append({
                         'path': os.path.join(root, cls, '%06d.JPEG' % int(idx)),
                         'cls': c,
-                        'bbox': [int(c) for c in xyxy],
-                    })
+                        'bbox': [int(c) for c in xyxy]})
 
     def __len__(self):
         return len(self.images)
@@ -59,7 +58,7 @@ class TvidDataset(data.Dataset):
     def __getitem__(self, idx):
         img_info = self.images[idx]
         img, bbox = self.transforms(img_info['path'], img_info['bbox'])
-        return img, { 'cls': img_info['cls'], 'bbox': bbox }
+        return img, {'cls': img_info['cls'], 'bbox': bbox}
 
     # End of todo
 

@@ -5,18 +5,19 @@ import resnet
 # TODO Design the detector.
 # tips: Use pretrained `resnet` as backbone.
 
+
 class BoxHead(nn.Module):
     def __init__(self, lengths, num_classes):
         super(BoxHead, self).__init__()
         self.cls_score = nn.Sequential(*tuple([
-                            nn.Sequential(nn.Linear(lengths[i], lengths[i + 1]),
-                            nn.ReLU()) for i in range(len(lengths) - 1)] +
-                            [nn.Linear(lengths[-1], num_classes)]))
+            module for i in range(len(lengths) - 1)
+            for module in (nn.Linear(lengths[i], lengths[i + 1]), nn.ReLU())]
+            + [nn.Linear(lengths[-1], num_classes)]))
 
         self.bbox_pred = nn.Sequential(*tuple([
-                            nn.Sequential(nn.Linear(lengths[i], lengths[i + 1]),
-                            nn.ReLU()) for i in range(len(lengths) - 1)] +
-                            [nn.Linear(lengths[-1], 4)]))
+            module for i in range(len(lengths) - 1)
+            for module in (nn.Linear(lengths[i], lengths[i + 1]), nn.ReLU())]
+            + [nn.Linear(lengths[-1], 4)]))
 
     def forward(self, x):
         logits = self.cls_score(x)
@@ -32,11 +33,11 @@ class Detector(nn.Module):
         self.backbone = getattr(resnet, backbone)(pretrained=True)
         self.box_head = BoxHead(lengths, num_classes)
 
-
     def forward(self, x):
-        x = self.backbone(x)        # B, 2048, 4, 4
+        x = self.backbone(x)  # B, 2048, 4, 4
         x = x.flatten(1)
         logits, bbox = self.box_head(x)
         return logits, bbox
+
 
 # End of todo

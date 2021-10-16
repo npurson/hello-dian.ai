@@ -31,8 +31,8 @@ class Tanh(Module):
         # TODO Implement forward propogation
         # of tanh function.
 
-        self.x = x
-        return np.tanh(x)
+        self.y = np.tanh(x)
+        return self.y
 
         # End of todo
 
@@ -41,7 +41,7 @@ class Tanh(Module):
         # TODO Implement backward propogation
         # of tanh function.
 
-        return dy * (1 - self.x ** 2)
+        return dy * (1 - self.y ** 2)
 
         # End of todo
 
@@ -73,7 +73,7 @@ class Softmax(Module):
     def forward(self, x):
 
         # TODO Implement forward propogation
-        # of ReLU function.
+        # of Softmax function.
 
         exps = np.exp(x)
         return exps / np.sum(exps, axis=1, keepdims=True)
@@ -82,12 +82,8 @@ class Softmax(Module):
 
     def backward(self, dy):
 
-        # TODO Implement backward propogation
-        # of ReLU function.
-
+        # Omitted.
         ...
-
-        # End of todo
 
 
 class Loss(object):
