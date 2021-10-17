@@ -1,7 +1,7 @@
 # Hello, Dian.ai!
 
-![](https://img.shields.io/badge/organization-dian.ai-orange)
-![](https://img.shields.io/badge/version-1.2.0-blue)
+![](https://img.shields.io/badge/organization-Dian.ai-orange)
+![](https://img.shields.io/badge/version-1.3.0-blue)
 ![](https://img.shields.io/badge/license-MIT-blue)
 ![](https://img.shields.io/badge/test-100%-green)
 
@@ -16,6 +16,14 @@ Lab assignments for Introduction Course of _Dian.ai_.
 - **[Lab 4: Generative Adversarial Networks](lab4/README.md)**: Generate anime avators with GAN!
 - **[Lab 5: Reinforcement Learning](lab5/README.md)**: Develop reinforcement learning algorithms through playing games!
 
+
+## Changelog
+
+v1.3.0 was released in 2021/10/17.
+* ♻️ Refactor module tests.
+* 🌱 Dian Recruitment Fall 2021
+* 🐛 **TODO** Fix the implementation of `Conv2d_im2col`
+* 🚧 **TODO** Module test for `BatchNorm1d`
 
 ## Contributing
 

@@ -135,10 +135,10 @@ class BatchNorm1d(Module):
         if self.training:
             self.mean = np.mean(x, axis=0)
             self.var = np.var(x, axis=0)
-            self.running_mean = self.momentum * self.running_mean + (
-                                1 - self.momentum) * self.mean
-            self.running_var = self.momentum * self.running_var + (
-                               1 - self.momentum) * self.var
+            self.running_mean = self.momentum * self.running_mean + \
+                                (1 - self.momentum) * self.mean
+            self.running_var = self.momentum * self.running_var + \
+                               (1 - self.momentum) * self.var
             self.x = (x - self.mean) / np.sqrt(self.var + self.eps)
         else:
             self.x = (x - self.running_mean) / np.sqrt(
@@ -172,7 +172,7 @@ class BatchNorm1d(Module):
 class Conv2d(Module):
 
     def __init__(self, in_channels: int, channels: int, kernel_size: int=3,
-                 stride: int=1, padding: int=0, bias: bool=False):
+                 stride: int=1, padding: int=0, bias: bool=True):
         """Module which applies 2D convolution to input.
 
         Args:
@@ -191,9 +191,9 @@ class Conv2d(Module):
         self.stride = stride
         self.padding = padding
 
-        self.kernel = tensor.rand((channels, in_channels,
-                                   kernel_size, kernel_size))
-        self.bias = tensor.zeros(channels) if bias else None
+        self.kernel = tensor.tensor((channels, in_channels,
+                                     kernel_size, kernel_size))
+        self.bias = tensor.zeros(channels) if bias is not None else None
 
         # End of todo
 
@@ -220,9 +220,12 @@ class Conv2d(Module):
 
         for b, c, h, w in product(*tuple([range(d) for d in out.shape])):
             out[b, c, h, w] = np.sum(self.kernel[c] *
-                                     x[b, :, h * self.stride : h * self.stride + self.kernel_size,
-                                             w * self.stride : w * self.stride + self.kernel_size])
-        return (out + self.bias) if self.bias else out
+                                     x[b, :, h * self.stride :
+                                             h * self.stride + self.kernel_size,
+                                             w * self.stride :
+                                             w * self.stride + self.kernel_size])
+        return (out + np.tile(self.bias, (B, Hp, Wp, 1)).transpose(0, 3, 1, 2)) \
+               if self.bias is not None else out
 
         # End of todo
 
@@ -242,14 +245,18 @@ class Conv2d(Module):
         self.kernel.grad = np.zeros_like(self.kernel)
 
         for b, c, h, w in product(*tuple([range(d) for d in dy.shape])):
-            dx[b, :, h * self.stride : h * self.stride + self.kernel_size,
-                     w * self.stride : w * self.stride + self.kernel_size] \
+            dx[b, :, h * self.stride :
+                     h * self.stride + self.kernel_size,
+                     w * self.stride :
+                     w * self.stride + self.kernel_size] \
                 += self.kernel[c] * dy[b, c, h, w]
 
             self.kernel.grad[c] += dy[b, c, h, w] * \
-                self.x[b, :, h * self.stride : h * self.stride + self.kernel_size,
-                             w * self.stride : w * self.stride + self.kernel_size]
-        if self.bias:
+                self.x[b, :, h * self.stride :
+                             h * self.stride + self.kernel_size,
+                             w * self.stride :
+                            w * self.stride + self.kernel_size]
+        if self.bias is not None:
             self.bias.grad = np.sum(dy, axis=(0, 2, 3))
         if self.padding:
             dx = dx[..., self.padding:-self.padding,
@@ -274,12 +281,15 @@ class Conv2d_im2col(Conv2d):
             x = np.pad(x, ((0, 0), (0, 0), (self.padding, self.padding),
                            (self.padding, self.padding)))
         self.x = x
+
         shape = (B, C, Hp, Wp, self.kernel_size, self.kernel_size)
         strides = (*x.strides[:-2], x.strides[-2] * self.stride,
                    x.strides[-1] * self.stride, *x.strides[-2:])
         xp = np.lib.stride_tricks.as_strided(out, shape=shape, strides=strides, writeable=False)
-        x = np.tensordot(xp, self.kernel, axes=((1, -2, -1), (1, 2, 3))).transpose((0, 3, 1, 2))
-        return (out + self.bias) if self.bias else out
+        out = np.tensordot(xp, self.kernel, axes=((1, -2, -1), (1, 2, 3))) # .transpose((0, 3, 1, 2))
+
+        return (out + np.tile(self.bias, (B, Hp, Wp, 1)).transpose(0, 3, 1, 2)) \
+               if self.bias is not None else out
 
         # End of todo
 
@@ -327,8 +337,10 @@ class AvgPool(Module):
         self.x = x
 
         for h, w in product(range(Hp), range(Wp)):
-            out[..., h, w] = np.mean(x[..., h * self.stride:h * self.stride + self.kernel_size,
-                                            w * self.stride:w * self.stride + self.kernel_size],
+            out[..., h, w] = np.mean(x[..., h * self.stride:
+                                            h * self.stride + self.kernel_size,
+                                            w * self.stride:
+                                            w * self.stride + self.kernel_size],
                                      axis=(2, 3))
         return out
 
@@ -349,10 +361,12 @@ class AvgPool(Module):
         dx = np.zeros_like(self.x)
         B, C, H, W = dy.shape
         for h, w in product(range(H), range(W)):
-            dx[..., h * self.stride : h * self.stride + self.kernel_size,
-                    w * self.stride : w * self.stride + self.kernel_size] \
-                += (np.expand_dims(dy[..., h, w], 2).repeat(self.kernel_size ** 2, 2) / \
-                   (self.kernel_size ** 2)).reshape(B, C, self.kernel_size, self.kernel_size)
+            dx[..., h * self.stride :
+                    h * self.stride + self.kernel_size,
+                    w * self.stride :
+                    w * self.stride + self.kernel_size] \
+                += (np.expand_dims(dy[..., h, w], 2).repeat(self.kernel_size ** 2, 2) /
+                    (self.kernel_size ** 2)).reshape(B, C, self.kernel_size, self.kernel_size)
         if self.padding:
             dx = dx[..., self.padding:-self.padding,
                          self.padding:-self.padding]
@@ -433,15 +447,18 @@ class MaxPool(Module):
         B, C, H, W = dy.shape
 
         for h, w in product(range(H), range(W)):
-            max = np.max(self.x[..., h * self.stride : h * self.stride + self.kernel_size,
-                                     w * self.stride : w * self.stride + self.kernel_size],
-                         axis=(2, 3))
-            mask = self.x[..., h * self.stride:h * self.stride + self.kernel_size,
-                               w * self.stride:w * self.stride + self.kernel_size] == max
-            dx[:, :, h * self.stride : h * self.stride + self.kernel_size,
-                     w * self.stride : w * self.stride + self.kernel_size] \
-                += mask * np.expand_dims(dy[..., h, w], 2).repeat(self.kernel_size ** 2, axis=2) \
-                                                          .reshape(B, C, self.kernel_size, self.kernel_size)
+            x_sw = self.x[..., h * self.stride :
+                               h * self.stride + self.kernel_size,
+                               w * self.stride :
+                               w * self.stride + self.kernel_size]
+            mask = np.eye(self.kernel_size ** 2)[np.argmax(x_sw.reshape(B, C, -1),
+                   axis=-1)].reshape(B, C, self.kernel_size, self.kernel_size)
+            dx[..., h * self.stride :
+                    h * self.stride + self.kernel_size,
+                    w * self.stride :
+                    w * self.stride + self.kernel_size] \
+                += np.tile(np.expand_dims(dy[..., h, w], axis=(-2, -1)),
+                           (self.kernel_size, self.kernel_size)) * mask
         if self.padding:
             dx = dx[..., self.padding:-self.padding,
                          self.padding:-self.padding]

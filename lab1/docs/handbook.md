@@ -2,7 +2,7 @@
 
 ## 1. Helloworld
 
-Outline:
+### Learning Outline
 
 * Linear model
 * Optimization & gradient descent
@@ -19,6 +19,8 @@ look for all TODO blocks by search "TODO".
 
 # End of todo
 ```
+
+### Objectives
 
 Implment the `Linear` Class in `nn/modules.py` with `forward()` and `backward()` methods. 
 Then pass the test of `module_test.py`, the usage is as follows:
@@ -42,12 +44,17 @@ Tips: [Optional] VSCode user can use `# %%` to turn a Python source file into Ju
 
 ## 2. MNIST classification
 
-Outline:
+### Learning Outline
 
 * Backward propagation
 * NN modules: BatchNorm, Convolution, Pooling, Activation, etc.
 * Loss function
 
+### Objectives:
+
 1. Implement the rest TODOs in `modules.py` & `functional.py` and pass the test with `module_test.py`.
 2. Implement the TODOs in `optim.py`
-3. Design a classifier and train on MNIST or other datasets.
+3. Design a classifier and train on MNIST or other harder datasets, *e.g.*, Cifar-10.
+4. Once you have completed the whole NN framework, its source code and our official solutions are worth reading!
+
+* 😵 We still haven't figure how to test the implementation of `BatchNorm1d`, submit PRs if you have any better ideas!
