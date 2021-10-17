@@ -9,8 +9,7 @@ class Sigmoid(Module):
         # TODO Implement forward propogation
         # of sigmoid function.
 
-        self.y = 1 / (1 + np.exp(-x))
-        return self.y
+        ...
 
         # End of todo
 
@@ -19,7 +18,7 @@ class Sigmoid(Module):
         # TODO Implement backward propogation
         # of sigmoid function.
 
-        return dy * self.y * (1 - self.y)
+        ...
 
         # End of todo
 
@@ -31,8 +30,7 @@ class Tanh(Module):
         # TODO Implement forward propogation
         # of tanh function.
 
-        self.y = np.tanh(x)
-        return self.y
+        ...
 
         # End of todo
 
@@ -41,7 +39,7 @@ class Tanh(Module):
         # TODO Implement backward propogation
         # of tanh function.
 
-        return dy * (1 - self.y ** 2)
+        ...
 
         # End of todo
 
@@ -53,8 +51,7 @@ class ReLU(Module):
         # TODO Implement forward propogation
         # of ReLU function.
 
-        self.x = x
-        return np.maximum(x, 0)
+        ...
 
         # End of todo
 
@@ -63,7 +60,7 @@ class ReLU(Module):
         # TODO Implement backward propogation
         # of ReLU function.
 
-        return np.where(self.x > 0, dy, 0)
+        ...
 
         # End of todo
 
@@ -75,8 +72,7 @@ class Softmax(Module):
         # TODO Implement forward propogation
         # of Softmax function.
 
-        exps = np.exp(x)
-        return exps / np.sum(exps, axis=1, keepdims=True)
+        ...
 
         # End of todo
 
@@ -117,12 +113,7 @@ class SoftmaxLoss(Loss):
 
         # TODO Calculate softmax loss.
 
-        super(SoftmaxLoss, self).__call__(probs, targets)
         ...
-        exps = np.exp(probs)
-        probs = exps / np.sum(exps, axis=1, keepdims=True)
-        self.value = np.sum(-np.eye(self.n_classes)[targets] * np.log(probs))
-        return self
 
         # End of todo
 
@@ -131,7 +122,7 @@ class SoftmaxLoss(Loss):
         # TODO Implement backward propogation
         # of softmax loss function.
 
-        return self.probs - np.eye(self.n_classes)[self.targets]
+        ...
 
         # End of todo
 
@@ -142,9 +133,7 @@ class CrossEntropyLoss(Loss):
 
         # TODO Calculate cross-entropy loss.
 
-        super(SoftmaxLoss, self).__call__(probs, targets)
         ...
-        return self
 
         # End of todo
 

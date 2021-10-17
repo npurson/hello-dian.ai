@@ -8,18 +8,7 @@ def load_mnist(root='./', n_samples=6e4):
 
     # TODO Load the MNIST dataset
 
-    files = (('train', 'train-images.idx3-ubyte', 'train-labels.idx1-ubyte', 6e4),
-             ('test', 't10k-images.idx3-ubyte', 't10k-labels.idx1-ubyte', 1e4))
-
-    ret = []
-    for set, imgs, labels, n in files:
-        X = np.fromfile(open(root + imgs), np.uint8)
-        X = X[16:].reshape((n, 28, 28)).astype(np.int)
-        y = np.fromfile(open(root + labels), np.uint8)
-        y = y[8:].reshape((n)).astype(np.int)
-        ret.append(X[n_samples] if set == 'train' else X)
-        ret.append(y[n_samples] if set == 'train' else y)
-    return ret
+    ...
 
     # End of todo
 

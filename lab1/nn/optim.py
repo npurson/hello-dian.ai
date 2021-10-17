@@ -18,15 +18,7 @@ class Optim(object):
         # else if is `Module` or `List` of `Module`,
         # call `self._step_module()` recursively.
 
-        for attr in vars(module).values():
-            if isinstance(attr, Tensor):
-                if hasattr(attr, 'grad'):
-                    self._update_weight(attr)
-            if isinstance(attr, Module):
-                self._step_module(attr)
-            if isinstance(attr, list):
-                for item in attr:
-                    self._step_module(item)
+        ...
 
         # End of todo
 
@@ -45,9 +37,7 @@ class SGD(Optim):
         # TODO Update the weight of tensor
         # in SGD manner.
 
-        tensor.v = self.momentum * tensor.v + self.lr * tensor.grad \
-                   if 'v' in vars(tensor) else self.lr * tensor.grad
-        tensor -= tensor.v
+        ...
 
         # End of todo
 
