@@ -435,7 +435,7 @@ class Conv2d(Module):
         - stride: int
         - pad: int
         '''
-        self.W = tensor(np.random.randn(channels, in_channels, kernel_size, kernel_size))
+        self.W = tensor.from_array(np.random.randn(channels, in_channels, kernel_size, kernel_size))
         # self.b = b
         self.stride = stride
         self.pad = padding
@@ -443,6 +443,7 @@ class Conv2d(Module):
         self.x = None
         self.col = None
         self.col_W = None
+
         # self.dW = None   self.W.grad
         # self.db = None
         ...
@@ -460,21 +461,43 @@ class Conv2d(Module):
 
         # TODO Implement forward propogation
         # of 2d convolution module.
+        def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
+            N, C, H, W = input_data.shape
+            out_h = (H + 2 * pad - filter_h) // stride + 1
+            out_w = (W + 2 * pad - filter_w) // stride + 1
+
+            img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
+            col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+
+            for y in range(filter_h):
+                y_max = y + stride * out_h
+                for x in range(filter_w):
+                    x_max = x + stride * out_w
+                    col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
+
+            col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
+            return col
+        
+        
+        
         FN, C, FH, FW = self.W.shape
         N, C, H, W = x.shape
         out_h = 1 + int((H + 2*self.pad - FH) / self.stride)
         out_w = 1 + int((W + 2*self.pad - FW) / self.stride)
-
-        col = Conv2d_im2col(x)
+        print('ok in _init_ of conv2d')
+        col = im2col(x, FH, FW, self.stride, self.pad)
+        print('ok in im2col')
         col_W = self.W.reshape(FN, -1).T
-
+        print('ok in reshape')
         out = np.dot(col, col_W)
+        print('ok in dot of col and col_w')
         out = out.reshape(N, out_h, out_w, -1).transpose(0, 3, 1, 2)
         
         self.x = x
         self.col = col
         self.col_W = col_W
         
+        print('ok in forward of conv2d')
         return out
         
         
@@ -524,34 +547,34 @@ class Conv2d(Module):
         # End of todo
 
 
-class Conv2d_im2col(Conv2d):
+# class Conv2d_im2col(Conv2d):
 
-    def forward(self, x):
+#     def forward(self, x):
 
-        # TODO Implement forward propogation of
-        # 2d convolution module using im2col method.
-        input_data = x
-        filter_h, filter_w = self.kernel_size, self.kernel_size
-        stride = self.stride
-        pad = self.pad
-        N, C, H, W = input_data.shape
-        out_h = (H + 2 * pad - filter_h) // stride + 1
-        out_w = (W + 2 * pad - filter_w) // stride + 1
+#         # TODO Implement forward propogation of
+#         # 2d convolution module using im2col method.
+#         input_data = x
+#         filter_h, filter_w = self.kernel_size, self.kernel_size
+#         stride = self.stride
+#         pad = self.pad
+#         N, C, H, W = input_data.shape
+#         out_h = (H + 2 * pad - filter_h) // stride + 1
+#         out_w = (W + 2 * pad - filter_w) // stride + 1
 
-        img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
-        col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
+#         img = np.pad(input_data, [(0, 0), (0, 0), (pad, pad), (pad, pad)], 'constant')
+#         col = np.zeros((N, C, filter_h, filter_w, out_h, out_w))
 
-        for y in range(filter_h):
-            y_max = y + stride * out_h
-            for x in range(filter_w):
-                x_max = x + stride * out_w
-                col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
+#         for y in range(filter_h):
+#             y_max = y + stride * out_h
+#             for x in range(filter_w):
+#                 x_max = x + stride * out_w
+#                 col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]
 
-        col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
-        return col
-        ...
+#         col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N * out_h * out_w, -1)
+#         return col
+#         ...
 
-        # End of todo
+#         # End of todo
 
 
 class AvgPool(Module):

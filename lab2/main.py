@@ -24,7 +24,7 @@ def train_epoch(model, dataloader, criterion: dict, optimizer, scheduler, epoch,
     for X, y in bar:
 
         # TODO Implement the train pipeline.
-
+        
         ...
 
         # End of todo
