@@ -17,27 +17,33 @@ lengths = (n_features, 512, n_classes)
 class Model(nn.Module):
 
     # TODO Design the classifier.
-    
+
     ...
 
     # End of todo
 
 
-def load_mnist(mode='train', n_samples=None):
+def load_mnist(mode='train', n_samples=None, flatten=True):
     images = './train-images-idx3-ubyte' if mode == 'train' else './t10k-images-idx3-ubyte'
     labels = './train-labels-idx1-ubyte' if mode == 'train' else './t10k-labels-idx1-ubyte'
     length = 60000 if mode == 'train' else 10000
 
-    X = np.fromfile(open(images), np.uint8)[16:].reshape((length, 28, 28)).astype(np.int32)
-    y = np.fromfile(open(labels), np.uint8)[8:].reshape((length)).astype(np.int32)
-    return (X[:n_samples].reshape(n_samples, -1), y[:n_samples]) if n_samples is not None else (X.reshape(length, -1), y)
+    X = np.fromfile(open(images), np.uint8)[16:].reshape(
+        (length, 28, 28)).astype(np.int32)
+    if flatten:
+        X = X.reshape(length, -1)
+    y = np.fromfile(open(labels), np.uint8)[8:].reshape(
+        (length)).astype(np.int32)
+    return (X[:n_samples] if n_samples is not None else X,
+            y[:n_samples] if n_samples is not None else y)
 
 
 def vis_demo(model):
     X, y = load_mnist('test', 20)
     probs = model.forward(X)
     preds = np.argmax(probs, axis=1)
-    fig = plt.subplots(nrows=4, ncols=5, sharex='all', sharey='all')[1].flatten()
+    fig = plt.subplots(nrows=4, ncols=5, sharex='all',
+                       sharey='all')[1].flatten()
     for i in range(20):
         img = X[i].reshape(28, 28)
         fig[i].set_title(preds[i])
@@ -65,7 +71,8 @@ def main():
             model.backward(loss.backward())
             optimizer.step()
             preds = np.argmax(probs, axis=1)
-            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f} loss={loss.value:.3f}')
+            bar.set_postfix_str(f'acc={np.sum(preds == y) / len(y) * 100:.1f}'
+                                ' loss={loss.value:.3f}')
 
         for X, y in testloader:
             probs = model.forward(X)

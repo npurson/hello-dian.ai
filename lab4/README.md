@@ -2,8 +2,11 @@
 
 Generate anime avators with GAN!
 
-👉 https://colab.research.google.com/drive/1JYY_HHtVSSOLixZfLwkxiWTRdPHJCS2t
+<https://colab.research.google.com/drive/1JYY_HHtVSSOLixZfLwkxiWTRdPHJCS2t>
+
+👆 Homework of *Machine Learning* course by Hungyi Lee
 
 ## Reference
 
-- Generative Adversarial Networks. *Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, Yoshua Bengio*
+- Generative Adversarial Networks. *Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, 
+  Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, Yoshua Bengio*

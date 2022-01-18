@@ -11,9 +11,8 @@ For each classes, use 150 samples for training and the rest for testing.
 
 ## Handbook
 
-1. Complete `TvidDataset`, `Detector`, `compute_iou`, and the rest in `main.py`.
-   Tips: Faster R-CNN is not required.
-2. Train on [Tiny-VID](http://xinggangw.info/data/tiny_vid.zip) dataset.
-   Accuracy, defined as $\frac{samples \ classified \ correctly \ \wedge \ IoU \ > \ 0.5}{total}$, should be at least 70%.
-3. Visualize detection results.
-4. Expected completion time: 2~3 days.
+1. Design a detector, and train & evaluate on [Tiny-VID](http://xinggangw.info/data/tiny_vid.zip) dataset. 
+   Complete `TvidDataset`, `Detector`, `compute_iou` and the rest in `main.py`. 
+   The accuracy should be at least 70%.
+2. Visualize detection results.
+3. Expected completion time: 2~3 days.

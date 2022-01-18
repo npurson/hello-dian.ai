@@ -66,7 +66,10 @@ class RandomHorizontalFlip(object):
     def __call__(self, image, bbox):
         if random.random() < self.flip_prob:
             image = F.hflip(image)
-            bbox = [image.size[-1] - bbox[2], bbox[1], image.size[-1] - bbox[0], bbox[2]]
+            bbox = [
+                image.size[-1] - bbox[2], bbox[1], image.size[-1] - bbox[0],
+                bbox[2]
+            ]
         return image, bbox
 
 
@@ -78,7 +81,10 @@ class RandomCrop(object):
         image = pad_if_smaller(image, self.size[0])
         crop_params = transforms.RandomCrop.get_params(image, self.size)
         image = F.crop(image, *crop_params)
-        bbox = [bbox[0] - crop_params[0], bbox[1] - crop_params[1], bbox[2] - crop_params[0], bbox[3] - crop_params[1]]
+        bbox = [
+            bbox[0] - crop_params[0], bbox[1] - crop_params[1],
+            bbox[2] - crop_params[0], bbox[3] - crop_params[1]
+        ]
         return image, bbox
 
 

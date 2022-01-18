@@ -1,3 +1,10 @@
+import random
+import argparse
+import functools
+import inspect
+import sys
+import time
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -5,98 +12,221 @@ import torch.nn.functional as F
 import nn
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('tests', nargs='*')
+    return parser.parse_args()
+
+
+def randnint(n, a=8, b=16):
+    """Return N random integers."""
+    return (random.randint(a, b) for _ in range(n))
+
+
+isclose = functools.partial(np.isclose, rtol=1.e-5, atol=1.e-5)
+
+
 class TestBase(object):
+    def __init__(self, module, input_shape, module_params=None):
+        self.module = module.split('.')[-1]
+        module_params = module_params.split(',') \
+                        if module_params is not None else []
+        input_shape = input_shape.split('x')
+        keys = set(module_params + input_shape)
+        args = {k: v for k, v in zip(keys, randnint(len(keys)))}
 
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.types = ['maxPooling', 'Conv2D', 'BN', 'FC']
-
-        assert self.kwargs.get('type', None) is not None, "未指定测试模块类型，请添加'type'关键字"
-        self.module_type = self.kwargs.get('type')
-        assert self.module_type in self.types, "指定模块无效"
-
-        # 判断类型选择不同初始化方式
-        self.input_numpy = None
-        if self.module_type == 'maxPooling':
-            self.input_numpy = np.random.rand(2, 2, 4, 4)
+        self.nnt = nn.tensor.tensor(tuple(args[k] for k in input_shape))
+        self.ptt = torch.Tensor(self.nnt)
+        self.ptt.requires_grad = True
+        if '.' in module:
+            self.nnm = getattr(nn.functional, self.module)(*tuple(args[k] for k in module_params))
         else:
-            self.input_numpy = np.random.rand(5, 4)
-        self.input_tensor = torch.Tensor(self.input_numpy)
-        self.input_tensor.requires_grad = True
+            self.nnm = getattr(nn, module)(*tuple(args[k] for k in module_params))
 
-        # 根据不同的网络选择方式，预留不同的打印信息的方式
-        self.w = None
-        self.model_tensor = None
-        self.model_numpy = None
+    def forward_test(self) -> bool:
+        # self.pt_out = ...
+        self.nn_out = self.nnm(self.nnt)
+        if self.nn_out is None:
+            return False
+        return isclose(self.nn_out,
+                       self.pt_out.detach().numpy()).all().item()
 
-    def forward(self):
-        self.output_tensor = self.model_tensor(self.input_tensor)
-        self.output_numpy = self.model_numpy(self.input_numpy)
-        if self.module_type == 'BN':
-            self.output_tensor.backward(self.output_tensor_delta)
-        else:
-            self.output_tensor_delta = self.output_tensor.sum()
-            self.output_numpy_delta = np.ones_like(self.output_numpy)
-            self.output_tensor_delta.backward()
-
-        self.printInfo()
-
-    def printInfo(self):
-        print("Input shape is: ===============>>>>>\t", self.input_numpy.shape)
-        print("\033[1;34;43mThe input matrix is:\033[0m")
-        print(self.input_numpy)
-        if self.model_numpy == "FC":
-            print("The W matrix shape is: ===============>>>>>\t", self.w.shape)
-            print("The W matrix is:")
-            print(self.w)
-        print("{:*^60}".format(''))
-        print("{:*^71}".format('\033[0;31m' + self.module_type + ' Layer Test\033[0m'))
-        print("{:*^60}".format(''))
-
-        print("1. Using your own Linear code.....\n")
-        print(self.output_numpy)
-        print("{:*^50}".format("The grad is as follows:"))
-        print(self.model_numpy.backward(self.output_numpy_delta))
-        print()
-
-        print("2. Here is the official code.....\n")
-        print(self.output_tensor)
-        print("{:*^50}".format("The grad is as follows:"))
-        print(self.input_tensor.grad)
-
-
-class TestModule(TestBase):
-
-    def __init__(self, **kwargs):
-        super(TestModule, self).__init__(**kwargs)
-        # 偏置矩阵初始化
-        if self.module_type == "FC":
-            self.FCInit()
-        elif self.module_type == "BN":
-            self.BNInit()
-
-    def FCInit(self):
-        in_length = self.input_numpy.shape[1]
-        out_length = 4
-        self.w = np.random.normal(loc=0.0, scale=0.1, size=(out_length, in_length + 1))
-        self.w_tensor = torch.Tensor(self.w)
-        # 初始化torch层
-        self.model_tensor = torch.nn.Linear(in_features=in_length, out_features=out_length, bias=True)
-        self.model_tensor.bias.data = self.w_tensor[:, 0]
-        self.model_tensor.weight.data = self.w_tensor[:, 1:]
-        # 初始化numpy层
-        self.model_numpy = nn.Linear(in_length=in_length, out_length=out_length, w=self.w)
-
-    def BNInit(self):
-        self.output_numpy_delta = np.random.rand(self.input_numpy.shape[0], self.input_numpy.shape[1])
-        self.output_tensor_delta = torch.tensor(self.output_numpy_delta, requires_grad=True)
-        self.model_tensor = torch.nn.BatchNorm1d(num_features=self.input_numpy.shape[1], eps=1e-5, momentum=0.9, affine=True)
-        self.model_numpy = nn.BatchNorm1d(length=self.input_numpy.shape[1])
+    def backward_test(self) -> bool:
+        if self.nn_out is None:
+            return False
+        self.nn_grad = self.nnm.backward(nn.tensor.ones_like(self.nn_out))
+        if self.nn_grad is None:
+            return False
+        self.pt_out.sum().backward()
+        self.pt_grad = self.ptt.grad
+        return isclose(self.nn_grad, self.pt_grad.detach().numpy()).all().item()
 
     def __call__(self):
-        self.forward()
+        def statstr(s):
+            return '\033[32mpass\033[0m' if s else \
+                   '\033[31mfail\033[0m'
+
+        indent = 10
+        output = (self.module if len(self.module) < indent - 2 else
+                  self.module[:indent - 2]) + ': '
+        output += ' ' * (indent - len(output))
+        output += 'forward ' + '.' * 32 + ' ' + \
+                  statstr(self.forward_test()) + \
+                  '\n' + ' ' * indent + \
+                  'backward ' + '.' * 31 + ' ' + \
+                  statstr(self.backward_test())
+        print(output)
+
+
+class LinearTest(TestBase):
+    def __init__(self):
+        super().__init__('Linear', input_shape='BxL', module_params='L,C')
+
+    def forward_test(self):
+        self.pt_wgt = torch.Tensor(self.nnm.w[1:]).transpose(0, 1)
+        self.pt_wgt.requires_grad = True
+        self.pt_bias = torch.Tensor(self.nnm.w[0])
+        self.pt_bias.requires_grad = True
+        self.pt_out = F.linear(input=self.ptt, weight=self.pt_wgt,
+                               bias=self.pt_bias)
+        return super().forward_test()
+
+    def backward_test(self):
+        s = super().backward_test()
+        s &= isclose(self.nnm.w.grad[1:], self.pt_wgt.grad.transpose(0, 1)
+                     .detach().numpy()).all().item()
+        s &= isclose(self.nnm.w.grad[0], self.pt_bias.grad
+                     .detach().numpy()).all().item()
+        return s
+
+
+class Conv2dTest(TestBase):
+    def __init__(self):
+        super().__init__('Conv2d', input_shape='BxCxHxW', module_params='C,Cp')
+
+    def forward_test(self):
+        self.pt_wgt = torch.Tensor(self.nnm.kernel)
+        self.pt_wgt.requires_grad = True
+        self.pt_bias = torch.Tensor(self.nnm.bias)
+        self.pt_bias.requires_grad = True
+        self.pt_out = F.conv2d(input=self.ptt, weight=self.pt_wgt,
+                               bias=self.pt_bias)
+        return super().forward_test()
+
+    def backward_test(self):
+        s = super().backward_test()
+        s &= isclose(self.nnm.kernel.grad, self.pt_wgt.grad
+                     .detach().numpy()).all().item()
+        s &= isclose(self.nnm.bias.grad, self.pt_bias.grad
+                     .detach().numpy()).all().item()
+        return s
+
+
+class Conv2dIm2colTest(TestBase):
+    def __init__(self):
+        super().__init__('Conv2d_im2col', input_shape='BxCxHxW', module_params='C,Cp')
+
+    def forward_test(self):
+        self.pt_wgt = torch.Tensor(self.nnm.kernel)
+        self.pt_wgt.requires_grad = True
+        self.pt_bias = torch.Tensor(self.nnm.bias)
+        self.pt_bias.requires_grad = True
+        self.pt_out = F.conv2d(input=self.ptt, weight=self.pt_wgt,
+                               bias=self.pt_bias)
+        t1 = time.time()
+        s = super().forward_test()
+        t2 = time.time()
+        if t2 - t1 > 0.05:
+            print('\033[31mWarning: The speed of your implementation of the im2col '
+                  'version of Conv2d does\'t meet our expectation!\033[0m')
+        return s
+
+    def backward_test(self):
+        return True
+
+
+class AvgPoolTest(TestBase):
+    def __init__(self):
+        super().__init__('AvgPool', input_shape='BxCxHxW')
+
+    def forward_test(self):
+        self.pt_out = F.avg_pool2d(input=self.ptt, kernel_size=2)
+        return super().forward_test()
+
+    def backward_test(self):
+        return super().backward_test()
+
+
+class MaxPoolTest(TestBase):
+    def __init__(self):
+        super().__init__('MaxPool', input_shape='BxCxHxW')
+
+    def forward_test(self):
+        self.pt_out = F.max_pool2d(input=self.ptt, kernel_size=2)
+        return super().forward_test()
+
+    def backward_test(self):
+        return super().backward_test()
+
+
+class SigmoidTest(TestBase):
+    def __init__(self):
+        super().__init__('functional.Sigmoid', input_shape='BxL')
+
+    def forward_test(self):
+        self.pt_out = torch.sigmoid(input=self.ptt)
+        return super().forward_test()
+
+    def backward_test(self):
+        s = super().backward_test()
+        return s
+
+
+class TanhTest(TestBase):
+    def __init__(self):
+        super().__init__('functional.Tanh', input_shape='BxL')
+
+    def forward_test(self):
+        self.pt_out = torch.tanh(input=self.ptt)
+        return super().forward_test()
+
+    def backward_test(self):
+        s = super().backward_test()
+        return s
+
+
+class ReLUTest(TestBase):
+    def __init__(self):
+        super().__init__('functional.ReLU', input_shape='BxL')
+
+    def forward_test(self):
+        self.pt_out = torch.relu(input=self.ptt)
+        return super().forward_test()
+
+    def backward_test(self):
+        s = super().backward_test()
+        return s
+
+
+class SoftmaxTest(TestBase):
+    def __init__(self):
+        super().__init__('functional.Softmax', input_shape='BxL')
+
+    def forward_test(self):
+        self.pt_out = torch.softmax(input=self.ptt, dim=1)
+        return super().forward_test()
+
+    def backward_test(self):
+        return True
 
 
 if __name__ == '__main__':
-    t = TestModule(type='BN')
-    t()
+    args = parse_args()
+    if args.tests:
+        args.tests = [t + 'Test' for t in args.tests]
+    else:
+        modules = inspect.getmembers(sys.modules['__main__'], inspect.isclass)
+        args.tests = [m[0] for m in modules if m[0] != 'TestBase']
+    for test in args.tests:
+        test_module = globals()[test]()
+        test_module()
